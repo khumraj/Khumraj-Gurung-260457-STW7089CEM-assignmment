@@ -16,32 +16,16 @@ if (!require("tidyverse")) {
 }
 
 # Plain number format and wide console output
-options(scipen = 999, width = 150)
-
-
-# ==================================================================================================
-# Task 1: Preliminary data analysis
-# ==================================================================================================
-# Load the data
-data_telemetry <- read.csv("X.csv")     # inputs x1-x4
-data_power     <- read.csv("y.csv")     # output y
-data_time      <- read.csv("time.csv")  # sampling time (seconds)
-
-# Combine into one data frame
-server_data <- cbind(data_time, data_telemetry, data_power)
-
-time_col <- server_data$time_seconds
-power_col <- server_data$power_consumption
-signal_labels <- c("x1", "x2", "x3", "x4", "y")
-
-# Signal labels for tables and plots
-signal_names <- c("CPU Utilization", "Memory Usage", "Disk I/O", "Network Traffic", "Power Consumption")
-clean_labels <- paste0(signal_labels, " ( ", signal_names, " )")
-
+options(scipen = 999, width = 80)
 
 # ==================================================================================================
 # Helper functions and plot style
 # ==================================================================================================
+
+# Check if the "outputs" folder exists, and create it if it doesn't
+if (!dir.exists("outputs")) {
+  dir.create("outputs")
+}
 
 # Print a titled table (text left-aligned, numbers right-aligned)
 show_table <- function(title, table) {
@@ -111,7 +95,7 @@ start_figure <- function(rows, cols) {
   top_margin <- if (rows * cols == 1) 1 else 3
   par(mfrow = c(rows, cols), mar = c(4.5, 5, top_margin, 1), oma = c(0, 0, 2.5, 0),
       las = 1, mgp = c(3.4, 0.7, 0), tcl = -0.3,
-      cex.main = 1.05, cex.lab = 0.95, cex.axis = 0.85)
+      cex.main = 1.3, cex.lab = 1.4, cex.axis = 1.1)
 }
 
 # Add the figure title and reset the layout
@@ -122,7 +106,7 @@ finish_figure <- function(title) {
 
 # Draw the color key in an empty panel
 legend_panel <- function(labels, colors = NA, pch = NA, lty = NA, lwd = NA,
-                         fill = NULL, cex = 0.9) {
+                         fill = NULL, cex = 1.5) {
   plot.new()
   if (is.null(fill)) {
     legend("center", legend = labels, col = colors, pch = pch, lty = lty, lwd = lwd,
@@ -135,6 +119,26 @@ legend_panel <- function(labels, colors = NA, pch = NA, lty = NA, lwd = NA,
   }
 }
 
+# ==================================================================================================
+# Task 1: Preliminary data analysis
+# ==================================================================================================
+# Load the data
+data_telemetry <- read.csv("X.csv")     # inputs x1-x4
+data_power     <- read.csv("y.csv")     # output y
+data_time      <- read.csv("time.csv")  # sampling time (seconds)
+
+# Combine into one data frame
+server_data <- cbind(data_time, data_telemetry, data_power)
+
+time_col <- server_data$time_seconds
+power_col <- server_data$power_consumption
+signal_labels <- c("x1", "x2", "x3", "x4", "y")
+
+# Signal labels for tables and plots
+signal_names <- c("CPU Utilization", "Memory Usage", "Disk I/O", "Network Traffic", "Power Consumption")
+clean_labels <- paste0(signal_labels, " ( ", signal_names, " )")
+
+
 ```
 
 # ==================================================================================================
@@ -142,6 +146,7 @@ legend_panel <- function(labels, colors = NA, pch = NA, lty = NA, lwd = NA,
 # ==================================================================================================
 
 ```{r}
+png("outputs/task_1.1_time_series.png", width = 10, height = 10, units = "in", res = 300)
 start_figure(3, 2)
 
 for (i in 2:ncol(server_data)) {
@@ -155,6 +160,7 @@ for (i in 2:ncol(server_data)) {
 legend_panel(c("Input signal (x1 - x4)", "Output signal (y)"),
              c(COLOR_INPUT, COLOR_OUTPUT), lty = 1, lwd = 3)
 finish_figure("Task 1.1: Time Series of the Input and Output Signals")
+dev.off()
 
 ```
 
@@ -163,6 +169,7 @@ finish_figure("Task 1.1: Time Series of the Input and Output Signals")
 # ==================================================================================================
 
 ```{r}
+png("outputs/task_1.2_distributions.png", width = 10, height = 10, units = "in", res = 300, pointsize = 12)
 start_figure(3, 2)
 
 # Histogram of each signal
@@ -188,6 +195,8 @@ legend_panel(c("Input signal (x1 - x4)", "Input density curve",
                see_through(COLOR_OUTPUT, 0.6), COLOR_OUTPUT_DARK, COLOR_REFERENCE),
              pch = c(15, NA, 15, NA, NA), lty = c(NA, 1, NA, 1, 2), lwd = c(NA, 2, NA, 2, 2))
 finish_figure("Task 1.2: Distribution of Each Signal")
+
+dev.off()
 ```
 
 ```{r}
@@ -236,6 +245,7 @@ show_table("Task 1.3.1: Correlation between each Input and the Output Power",
 # Scatter plots of each input against the output
 
 ```{r}
+png("outputs/task_1.3.2_scatter_plots.png", width = 11, height = 11, units = "in", res = 300)
 start_figure(2, 2)
 
 for (i in 2:(ncol(server_data) - 1)) {
@@ -254,6 +264,8 @@ for (i in 2:(ncol(server_data) - 1)) {
          pt.cex = 1.2, cex = 0.8, bty = "n")
 }
 finish_figure("Task 1.3.2: Scatter Plots of Each Input vs Output Power")
+
+dev.off()
 ```
 
 # ==================================================================================================
@@ -402,7 +414,8 @@ show_table("Task 2.4: AIC and BIC for Each Model",
 
 ```{r}
 # Residual histograms with density curve
-start_figure(2, 3)
+png("outputs/task_2.5.1_residuals.png", width = 11, height = 11, units = "in", res = 300)
+start_figure(3, 2)
 
 for (m in 1:5) {
   res <- residual_list[[m]]
@@ -424,11 +437,14 @@ legend_panel(c("Residuals (histogram)", "Density curve", "Normal curve (same mea
              c(see_through(COLOR_MODEL, 0.6), COLOR_MODEL_DARK, COLOR_REFERENCE, COLOR_REFERENCE),
              pch = c(15, NA, NA, NA), lty = c(NA, 1, 2, 3), lwd = c(NA, 2, 2, 1.5))
 finish_figure("Task 2.5.1: Distribution of the Model Residuals")
+
+dev.off()
 ```
 
 ```{r}
 # Normal Q-Q plots
-start_figure(2, 3)
+png("outputs/task_2.5.2_qq.png", width = 6.5, height = 7.5, units = "in", res = 300, pointsize = 12)
+start_figure(3, 2)
 
 for (m in 1:5) {
   qqnorm(residual_list[[m]], pch = 16, cex = 0.7,
@@ -440,6 +456,7 @@ legend_panel(c("Residual quantiles", "Normal reference line"),
              c(COLOR_MODEL_DARK, COLOR_REFERENCE),
              pch = c(16, NA), lty = c(NA, 1), lwd = c(NA, 2))
 finish_figure("Task 2.5.2: Normal Q-Q Plots of the Model Residuals")
+dev.off()
 ```
 
 ```{r}
@@ -597,6 +614,8 @@ sort_order     <- order(test_results$Predicted)
 sorted_results <- test_results[sort_order, ]
 sample_numbers <- seq_len(nrow(sorted_results))
 
+png("outputs/task_2.7.3_predictions.png", width = 6.5, height = 7.5, units = "in", res = 300, pointsize = 12)
+
 # Plot test data, prediction and 95% confidence intervals
 start_figure(1, 1)
 
@@ -626,6 +645,7 @@ legend("topleft",
        bg = "white", box.col = "grey85")
 finish_figure(paste("Task 2.7.3:", best_bic_model,
                     "Test Predictions with 95% Confidence Intervals"))
+dev.off()
 ```
 
 # ==================================================================================================
@@ -779,6 +799,7 @@ if (length(accepted_indices) < 2) {
 # ==================================================================================================
 
 ```{r}
+png("outputs/task_3.4.1_marginal_distributions.png", width = 6.5, height = 7.5, units = "in", res = 300, pointsize = 11)
 # Marginal posterior with posterior mean and Task 2.1 estimate
 start_figure(1, 2)
 
@@ -804,10 +825,12 @@ marginal_plot <- function(samples, estimate, label) {
 marginal_plot(accepted_1, est_1, param_label_1)
 marginal_plot(accepted_2, est_2, param_label_2)
 finish_figure("Task 3.4.1: Marginal Posterior Distributions (Rejection ABC)")
+dev.off()
 ```
 
 ```{r}
 # Joint posterior
+png("outputs/task_3.4.2_joint_posterior.png", width = 6.5, height = 7.5, units = "in", res = 300, pointsize = 12)
 start_figure(1, 1)
 
 plot(accepted_1, accepted_2,
@@ -836,7 +859,8 @@ legend("topright",
        col = c(COLOR_MODEL, COLOR_MODEL_DARK, COLOR_SUMMARY, COLOR_REFERENCE),
        pch = c(16, NA, 19, 17), lty = c(NA, 1, NA, NA), lwd = c(NA, 1.5, NA, NA),
        bg = "white", box.col = "grey85", cex = 0.85)
-finish_figure(paste("Task 3.4.2: Joint Posterior Distribution of", param_label_1, "and", param_label_2))
+finish_figure(paste("Joint Posterior Distribution of", param_label_1, "and", param_label_2))
+dev.off()
 ```
 
 # ==================================================================================================
